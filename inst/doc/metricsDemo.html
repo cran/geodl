@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Assessment Metrics for Use in Training Loop</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Assessment Metrics for Use in Training
+Loop</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(geodl)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(terra)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(yardstick)</span></code></pre></div>
+<div id="terminology" class="section level2">
+<h2>Terminology</h2>
+<p>During the training process, you may choose to monitor assessment
+metrics alongside of the loss function. Further, the assessment metrics
+can be calculated separately for the training and validation data for
+comparison and to assess for overfitting. The <strong>geodl</strong>
+package provides several classification assessment metrics that have
+been implemented using the <em>luz_metric()</em> function from the
+<strong>luz</strong> package. This function specifically defines metrics
+that can be monitored, calculated, and aggregated during the training
+processes over multiple mini-batches.</p>
+<p>The following metrics are provided:</p>
+<ul>
+<li><em>luz_metric_overall_accuracy()</em>: overall accuracy</li>
+<li><em>luz_metric_recall()</em>: class-aggregated, macro-averaged
+recall (producer’s accuracy)</li>
+<li><em>luz_metric_precision()</em>: class-aggregated, macro-averaged
+precision (user’s accuracy)</li>
+<li><em>luz_metric_f1score()</em>: class-aggregated, macro-averaged
+F1-score (harmonic mean of precision and recall)</li>
+</ul>
+<p>Note that macro-averaging is used since micro-averaged recall,
+precision, and F1-score are all equivalent to each other and to overall
+accuracy. So, there is no reason to calculate these metrics alongside
+overall accuracy. The <em>mode</em> argument can be set to either
+“binary” or “multiclass”. If “binary”, only the logit for the positive
+class prediction should be provided. If both the positive and negative
+or background class probabilities are provided for a binary
+classification, the “multiclass” <em>mode</em> should be used. Note that
+<strong>geodl</strong> is designed to treat all predictions as
+multiclass. The “binary” <em>mode</em> is only provided for use outside
+of the standard <strong>geodl</strong> workflow. For a binary
+classification as implemented with <strong>geodl</strong>, if you want
+to calculate precision, recall, and/or F1-score using only the positive
+case, you can set the weight for the background class to 0 in the
+calculation. This can be accomplished using the <em>clsWghts</em>
+parameter.</p>
+<p>The <em>biThresh</em> parameter allows you to select a probability
+threshold to differentiate positive and negative class predictions. The
+default is 0.5, or any pixel with a positive case probability, as
+approximated by applying a sigmoid function to the positive case logit,
+will be coded to the positive case. All other samples will be coded to
+the negative case. This parameter is not used for multiclass
+problems.</p>
+<p>The <em>smooth</em> parameter is used to avoid divide-by-zero errors
+and to improve numeric stability.</p>
+<p>The following two examples demonstrate the metrics. These metrics are
+also used within the example classification workflows provided in other
+articles.</p>
+</div>
+<div id="example-1-binary-classification" class="section level2">
+<h2>Example 1: Binary Classification</h2>
+<p>This first example demonstrates calculating the assessment metrics
+for a binary classification where the background class is coded as 0 and
+the positive case is coded as 1. First, the categorical raster grids are
+read in as spatRaster objects using the <em>rast()</em> function from
+<strong>terra</strong>, and the bands are renamed to aid in
+interpretability. The refC object represents the reference class numeric
+codes, the predL object represents the predicted logits (before the data
+are rescaled with a sigmoid function), and the predC object represent
+the predicted class indices.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>refC <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;C:/myFiles/data/metricCheck/binary_reference.tif&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>predL <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;C:/myFiles/data/metricCheck/binary_logits.tif&quot;</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>predC <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;C:/myFiles/data/metricCheck/binary_prediction.tif&quot;</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(refC) <span class="ot">&lt;-</span> <span class="st">&quot;reference&quot;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(predC) <span class="ot">&lt;-</span> <span class="st">&quot;prediction&quot;</span></span></code></pre></div>
+<p>For comparison, we first create a confusion matrix by
+cross-tabulating the grids using the <em>crosstab()</em> function from
+<strong>terra</strong> then calculate assessment metrics using the
+<strong>yardstick</strong> package from <strong>tidymodels</strong>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>cm <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">crosstab</span>(<span class="fu">c</span>(predC, refC))</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>yardstick<span class="sc">::</span><span class="fu">f_meas</span>(cm, <span class="at">estimator=</span><span class="st">&quot;binary&quot;</span>, <span class="at">event_level=</span><span class="st">&quot;second&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 1 × 3</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  .metric .estimator .estimate</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="sc">&lt;</span>chr<span class="sc">&gt;</span>   <span class="er">&lt;</span>chr<span class="sc">&gt;</span>          <span class="er">&lt;</span>dbl<span class="sc">&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> f_meas  binary         <span class="fl">0.951</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>yardstick<span class="sc">::</span><span class="fu">accuracy</span>(cm, <span class="at">estimator=</span><span class="st">&quot;binary&quot;</span>, <span class="at">event_level=</span><span class="st">&quot;second&quot;</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 1 × 3</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  .metric  .estimator .estimate</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="sc">&lt;</span>chr<span class="sc">&gt;</span>    <span class="er">&lt;</span>chr<span class="sc">&gt;</span>          <span class="er">&lt;</span>dbl<span class="sc">&gt;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> accuracy binary         <span class="fl">0.994</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>yardstick<span class="sc">::</span><span class="fu">recall</span>(cm, <span class="at">estimator=</span><span class="st">&quot;binary&quot;</span>, <span class="at">event_level=</span><span class="st">&quot;second&quot;</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 1 × 3</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  .metric .estimator .estimate</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="sc">&lt;</span>chr<span class="sc">&gt;</span>   <span class="er">&lt;</span>chr<span class="sc">&gt;</span>          <span class="er">&lt;</span>dbl<span class="sc">&gt;</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> recall  binary         <span class="fl">0.973</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>yardstick<span class="sc">::</span><span class="fu">precision</span>(cm, <span class="at">estimator=</span><span class="st">&quot;binary&quot;</span>, <span class="at">event_level=</span><span class="st">&quot;second&quot;</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 1 × 3</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  .metric   .estimator .estimate</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  <span class="sc">&lt;</span>chr<span class="sc">&gt;</span>     <span class="er">&lt;</span>chr<span class="sc">&gt;</span>          <span class="er">&lt;</span>dbl<span class="sc">&gt;</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> precision binary         <span class="fl">0.929</span></span></code></pre></div>
+<p>Before the assessment metrics can be calculated, the spatRaster
+objects need to be converted to <strong>torch</strong> tensors with the
+correct dimensionality and data types. This is accomplished as
+follows:</p>
+<ol style="list-style-type: decimal">
+<li>spatRaster objects are converted to R arrays.</li>
+<li>The R arrays are converted to <strong>torch</strong> tensors with
+the target codes represented using a long integer data type and the
+logits represented with a 32-bit float data type.</li>
+<li>The tensors are permuted so that the channel dimension is first, as
+is the standard within <strong>torch</strong>.</li>
+<li>A mini-batch dimension is added at the first position, as is
+required for use inside of training loops.</li>
+<li>Two copies are of the tensors are concatenated to simulate a
+mini-batch with two samples.</li>
+</ol>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>predL <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">as.array</span>(predL)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>refC <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">as.array</span>(refC)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(refC, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_long</span>())</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(predL, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_float32</span>())</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(target, target), <span class="at">dim=</span><span class="dv">1</span>)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(pred, pred), <span class="at">dim=</span><span class="dv">1</span>)</span></code></pre></div>
+<p>In the following blocks of code I calculate overall accuracy,
+F1-score, recall, and precision. This requires (1) instantiating an
+instance of the metric, (2) updating the metric using the predicted
+logits and class codes, and (3) computing the metric.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span><span class="fu">luz_metric_overall_accuracy</span>(<span class="at">nCls=</span><span class="dv">1</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">smooth=</span><span class="fl">1e-8</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">mode =</span> <span class="st">&quot;binary&quot;</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">biThresh =</span> <span class="fl">0.5</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">usedDS=</span><span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span>metric<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">update</span>(pred,target)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">compute</span>()</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="fl">0.9945027</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span><span class="fu">luz_metric_f1score</span>(<span class="at">nCls=</span><span class="dv">1</span>,</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                           <span class="at">smooth=</span><span class="fl">1e-8</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                           <span class="at">mode =</span> <span class="st">&quot;binary&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>                           <span class="at">biThresh =</span> <span class="fl">0.5</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>                           <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                           <span class="at">usedDS=</span><span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span>metric<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">update</span>(pred,target)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">compute</span>()</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="fl">0.9521416</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span><span class="fu">luz_metric_recall</span>(<span class="at">nCls=</span><span class="dv">1</span>,</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">smooth=</span><span class="fl">1e-8</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                          <span class="at">mode =</span> <span class="st">&quot;binary&quot;</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                          <span class="at">biThresh =</span> <span class="fl">0.5</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">usedDS=</span><span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span>metric<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">update</span>(pred,target)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">compute</span>()</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="fl">0.9782254</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span><span class="fu">luz_metric_precision</span>(<span class="at">nCls=</span><span class="dv">1</span>,</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                             <span class="at">smooth=</span><span class="fl">1e-8</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                             <span class="at">mode =</span> <span class="st">&quot;binary&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">biThresh =</span> <span class="fl">0.5</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                             <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                             <span class="at">usedDS=</span><span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span>metric<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">update</span>(pred,target)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">compute</span>()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="fl">0.9274127</span></span></code></pre></div>
+</div>
+<div id="example-2-multiclass-classification" class="section level2">
+<h2>Example 2: Multiclass Classification</h2>
+<p>A multiclass classification is simulated in this example. The process
+is very similar to the binary example other than how the metrics are
+configured. Now, the “multiclass” <em>mode</em> is used. The
+<em>zeroStart</em> parameter is set to TRUE. This indicates that the
+class codes start at 0 as opposed to 1. The <em>zeroStart</em> parameter
+is used within many of <strong>geodl</strong>’s functions. Due to how
+one-hot encoding is implemented by the <strong>torch</strong> package,
+indexing starting at 0 can cause issues. By indicating that indexing
+starts at 0, the workflow will augment the codes so that an error is not
+generated by one-hot encoding.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>refC <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;C:/myFiles/data/metricCheck/multiclass_reference.tif&quot;</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>predL <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;C:/myFiles/data/metricCheck/multiclass_logits.tif&quot;</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>predC <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;C:/myFiles/data/metricCheck/multiclass_prediction.tif&quot;</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(refC) <span class="ot">&lt;-</span> <span class="st">&quot;reference&quot;</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(predC) <span class="ot">&lt;-</span> <span class="st">&quot;prediction&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>cm <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">crosstab</span>(<span class="fu">c</span>(predC, refC))</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>yardstick<span class="sc">::</span><span class="fu">f_meas</span>(cm, <span class="at">estimator=</span><span class="st">&quot;macro&quot;</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 1 × 3</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  .metric .estimator .estimate</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="sc">&lt;</span>chr<span class="sc">&gt;</span>   <span class="er">&lt;</span>chr<span class="sc">&gt;</span>          <span class="er">&lt;</span>dbl<span class="sc">&gt;</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> f_meas  macro          <span class="fl">0.822</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>yardstick<span class="sc">::</span><span class="fu">accuracy</span>(cm, <span class="at">estimator=</span><span class="st">&quot;micro&quot;</span>)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 1 × 3</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  .metric  .estimator .estimate</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="sc">&lt;</span>chr<span class="sc">&gt;</span>    <span class="er">&lt;</span>chr<span class="sc">&gt;</span>          <span class="er">&lt;</span>dbl<span class="sc">&gt;</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> accuracy multiclass     <span class="fl">0.913</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>yardstick<span class="sc">::</span><span class="fu">recall</span>(cm, <span class="at">estimator=</span><span class="st">&quot;macro&quot;</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 1 × 3</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>  .metric .estimator .estimate</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>  <span class="sc">&lt;</span>chr<span class="sc">&gt;</span>   <span class="er">&lt;</span>chr<span class="sc">&gt;</span>          <span class="er">&lt;</span>dbl<span class="sc">&gt;</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> recall  macro          <span class="fl">0.827</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>yardstick<span class="sc">::</span><span class="fu">precision</span>(cm, <span class="at">estimator=</span><span class="st">&quot;macro&quot;</span>)</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 1 × 3</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>  .metric   .estimator .estimate</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>  <span class="sc">&lt;</span>chr<span class="sc">&gt;</span>     <span class="er">&lt;</span>chr<span class="sc">&gt;</span>          <span class="er">&lt;</span>dbl<span class="sc">&gt;</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> precision macro          <span class="fl">0.821</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>predL <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">as.array</span>(predL)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>refC <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">as.array</span>(refC)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(refC, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_long</span>())</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(predL, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_float32</span>())</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(target, target), <span class="at">dim=</span><span class="dv">1</span>)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(pred, pred), <span class="at">dim=</span><span class="dv">1</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span><span class="fu">luz_metric_overall_accuracy</span>(<span class="at">nCls=</span><span class="dv">5</span>,</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">smooth=</span><span class="fl">1e-8</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">mode =</span> <span class="st">&quot;multiclass&quot;</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">usedDS=</span><span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span>metric<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">update</span>(pred,target)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">compute</span>()</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="fl">0.9134674</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span><span class="fu">luz_metric_f1score</span>(<span class="at">nCls=</span><span class="dv">5</span>,</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>                           <span class="at">smooth=</span><span class="fl">1e-8</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>                           <span class="at">mode =</span> <span class="st">&quot;multiclass&quot;</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>                           <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>                           <span class="at">clsWghts =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>                           <span class="at">usedDS=</span><span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span>metric<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">update</span>(pred,target)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">compute</span>()</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="fl">0.8237987</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span><span class="fu">luz_metric_recall</span>(<span class="at">nCls=</span><span class="dv">5</span>,</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">smooth=</span><span class="fl">1e-8</span>,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>                          <span class="at">mode =</span> <span class="st">&quot;multiclass&quot;</span>,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>                          <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">clsWghts =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>),</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">usedDS=</span><span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span>metric<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">update</span>(pred,target)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">compute</span>()</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="fl">0.8265532</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span><span class="fu">luz_metric_precision</span>(<span class="at">nCls=</span><span class="dv">5</span>,</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>                             <span class="at">smooth=</span><span class="fl">1e-8</span>,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>                             <span class="at">mode =</span> <span class="st">&quot;multiclass&quot;</span>,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>                             <span class="at">clsWghts =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>),</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>                             <span class="at">usedDS=</span><span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>metric<span class="ot">&lt;-</span>metric<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">update</span>(pred,target)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>metric<span class="sc">$</span><span class="fu">compute</span>()</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="fl">0.8210625</span></span></code></pre></div>
+<p>Again, you will see more demonstrations of these assessment metrics
+within the example training loops.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

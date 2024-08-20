@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Unified Focal Loss Framework</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Unified Focal Loss Framework</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(geodl)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(torch)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>device <span class="ot">&lt;-</span> <span class="fu">torch_device</span>(<span class="st">&quot;cuda&quot;</span>)</span></code></pre></div>
+<div id="background" class="section level2">
+<h2>Background</h2>
+<p><strong>geodl</strong> provides a modified version of the
+<strong>unified focal loss</strong> proposed in the following study:</p>
+<p>Yeung, M., Sala, E., Schönlieb, C.B. and Rundo, L., 2022. Unified
+focal loss: Generalising dice and cross entropy-based losses to handle
+class imbalanced medical image segmentation. <em>Computerized Medical
+Imaging and Graphics</em>, 95, p.102026.</p>
+<p>The table below describes the loss parameterization. Our
+implementation is different from the originally proposed implementation
+because we do not implement symmetric and asymmetric forms. Instead, we
+allow the user to define class weights for both the distribution- and
+region-based loss components.</p>
+<div class="figure">
+<img src="data:image/png;base64,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" style="width:80.0%" alt />
+<p class="caption">Modified unified focal loss parameterization</p>
+</div>
+<p>The <em>lambda</em> parameter controls the relative weighting between
+the distribution- and region-based losses. When <em>lambda</em> = 1,
+only the distribution-based loss is used. When <em>lambda</em> = 0, only
+the region-based loss is used. Values between 0 and 1 yield a loss
+metric that incorporate both the distribution- and region-based loss
+components. A <em>lambda</em> of 0.5 yield equal weighting, values
+larger than 0.5 put more weight on the distribution-based loss, and
+values lower than 0.5 put more weighting on the region-based loss.</p>
+<p>The <em>gamma</em> parameter controls the weight applied to
+difficult-to-predict samples, defined as samples or classes with low
+predicted rescaled logits relative to their correct class. For the
+distribution-based loss, focal corrections are implemented
+sample-by-sample. For the region-based loss, corrections are implemented
+class-by-class during macro-averaging. <em>gamma</em> must be larger
+than 0 and less than or equal to 1. When <em>gamma</em> = 1, no focal
+correction is applied. Lower values result in a larger focal
+correction.</p>
+<p>The <em>delta</em> parameter controls the relative weights of FN and
+FP errors and should be between 0 and 1. A <em>delta</em> of 0.5 places
+equal weight on FN and FP errors. Values larger than 0.5 place more
+weight on FN in comparison to FP samples while values smaller than 0.5
+place more weight on FP samples in comparison to FN samples.</p>
+<p>The <em>clsWghtsDist</em> parameter controls the relative weights of
+classes in the distribution-based loss and is applied sample-by-sample.
+The <em>clsWghtsReg</em> parameter controls the relative weights of
+classes in the region-based loss and are applied to each class when
+calculating a macro average. By default, all classes are weighted
+equally. If you want to implement class weights, you must provide a
+vector of class weights equal in length to the number of classes being
+differentiated.</p>
+<p>Lastly, the <em>useLogCosH</em> parameter determines whether or not
+to apply a log cosh transformation to the region-based loss. If it is
+set to TRUE, this transformation is applied.</p>
+<p>Using different parameterization, users can define a variety of loss
+metrics including cross entropy (CE) loss, weighted CE loss, focal CE
+loss, focal weighted CE loss, Dice loss, focal Dice loss, Tversky loss,
+and focal Tversky loss.</p>
+</div>
+<div id="examples" class="section level2">
+<h2>Examples</h2>
+<p>We will now demonstrate how different loss metrics can be obtained
+using different parameterizations. We first load in example data using
+the <em>rast()</em> function from <strong>terra</strong> representing
+class reference numeric codes (refC) and predicted class logits
+(predL).</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>refC <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;C:/myFiles/data/metricCheck/multiclass_reference.tif&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>predL <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;C:/myFiles/data/metricCheck/multiclass_logits.tif&quot;</span>)</span></code></pre></div>
+<p>The spatRaster objects are then converted to <strong>torch</strong>
+tensors with the correct shape and data type. We simulate a mini-batch
+of two samples by concatenating two copies of the tensors.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>predL <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">as.array</span>(predL)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>refC <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">as.array</span>(refC)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(refC, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_long</span>(), <span class="at">device=</span>device)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(predL, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_float32</span>(), <span class="at">device=</span>device)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(target, target), <span class="at">dim=</span><span class="dv">1</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(pred, pred), <span class="at">dim=</span><span class="dv">1</span>)</span></code></pre></div>
+<div id="example-1-dice-loss" class="section level3">
+<h3>Example 1: Dice Loss</h3>
+<p>The <strong>Dice loss</strong> is obtained by setting the
+<em>lambda</em> parameter to 0, the <em>gamma</em> parameter to 1, and
+the <em>delta</em> parameter to 0.5. This results in only the
+region-based loss being considered, no focal correction being applied,
+and equal weighting between FN and FP errors.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>myDiceLoss <span class="ot">&lt;-</span> <span class="fu">defineUnifiedFocalLoss</span>(<span class="at">nCls=</span><span class="dv">5</span>,</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">lambda=</span><span class="dv">0</span>, <span class="co">#Only use region-based loss</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">gamma=</span> <span class="dv">1</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">delta=</span> <span class="fl">0.5</span>, <span class="co">#Equal weights for FP and FN</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">smooth =</span> <span class="fl">1e-8</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">clsWghtsDist=</span><span class="dv">1</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">clsWghtsReg=</span><span class="dv">1</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">useLogCosH =</span><span class="cn">FALSE</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">device=</span>device)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="fu">myDiceLoss</span>(<span class="at">pred=</span>pred,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>           <span class="at">target=</span>target)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>torch_tensor</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="fl">0.17861</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>[ CUDAFloatType{} ]</span></code></pre></div>
+</div>
+<div id="example-2-tversky-loss" class="section level3">
+<h3>#Example 2: Tversky Loss</h3>
+<p>The <strong>Tversky Loss</strong> can be obtained using the same
+settings as those used for the <strong>Dice loss</strong> except that
+the <em>delta</em> parameter must be set to a value other than 0.5 so
+that different weights are applied to FN and FP errors. In the example,
+we use a weighting of 0.6, which places more weight on FN errors
+relative to FP errors. Setting <em>gamma</em> to a value lower than 1
+results in a <strong>focal Tversky loss</strong>.</p>
+<p>Note that we regenerate the tensors so that the computational graphs
+are re-initialized.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(refC, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_long</span>(), <span class="at">device=</span>device)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(predL, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_float32</span>(), <span class="at">device=</span>device)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(target, target), <span class="at">dim=</span><span class="dv">1</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(pred, pred), <span class="at">dim=</span><span class="dv">1</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>myTverskyLoss <span class="ot">&lt;-</span> <span class="fu">defineUnifiedFocalLoss</span>(<span class="at">nCls=</span><span class="dv">5</span>,</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">lambda=</span><span class="dv">0</span>, <span class="co">#Only use region-based loss</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">gamma=</span> <span class="dv">1</span>,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">delta=</span> <span class="fl">0.6</span>, <span class="co">#FN weighted higher than FP</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">smooth =</span> <span class="fl">1e-8</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">clsWghtsDist=</span><span class="dv">1</span>,</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">clsWghtsReg=</span><span class="dv">1</span>,</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">useLogCosH =</span><span class="cn">FALSE</span>,</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">device=</span>device)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="fu">myTverskyLoss</span>(<span class="at">pred=</span>pred,</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>              <span class="at">target=</span>target)</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>torch_tensor</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="fl">0.177986</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>[ CUDAFloatType{} ]</span></code></pre></div>
+</div>
+<div id="example-3-cross-entropy-ce-loss" class="section level3">
+<h3>Example 3: Cross Entropy (CE) Loss</h3>
+<p>The <strong>cross entropy</strong> (<strong>CE</strong>) loss is
+obtained by setting <em>lambda</em> to 1, so that only the
+distribution-based loss is considered, and setting <em>gamma</em> to 1,
+so that no focal correction is applied. Setting <em>gamma</em> to a
+value lower than 1 results in a <strong>focal CE loss</strong>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(refC, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_long</span>(), <span class="at">device=</span>device)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(predL, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_float32</span>(), <span class="at">device=</span>device)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(target, target), <span class="at">dim=</span><span class="dv">1</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(pred, pred), <span class="at">dim=</span><span class="dv">1</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>myCELoss <span class="ot">&lt;-</span> <span class="fu">defineUnifiedFocalLoss</span>(<span class="at">nCls=</span><span class="dv">5</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">lambda=</span><span class="dv">1</span>, <span class="co">#Only use distribution-based loss</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">gamma=</span> <span class="dv">1</span>,</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">delta=</span> <span class="fl">0.5</span>,</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">smooth =</span> <span class="fl">1e-8</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">clsWghtsDist=</span><span class="dv">1</span>,</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">clsWghtsReg=</span><span class="dv">1</span>,</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">useLogCosH =</span><span class="cn">FALSE</span>,</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">device=</span>device)</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="fu">myCELoss</span>(<span class="at">pred=</span>pred,</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>         <span class="at">target=</span>target)</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>torch_tensor</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="fl">1.58689</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>[ CUDAFloatType{} ]</span></code></pre></div>
+</div>
+<div id="example-4-combo-loss" class="section level3">
+<h3>Example 4: Combo-Loss</h3>
+<p>A <strong>combo-loss</strong> can be obtained by setting
+<em>lambda</em> to a value between 0 and 1. In the example, we have used
+0.5, which results in equal weights being applied to the distribution-
+and region-based losses. We also apply a focal correction using a
+<em>gamma</em> of 0.8 and weight FN errors higher than FP errors by
+using a <em>delta</em> of 0.6. The result is a combination of the
+<strong>focal CE</strong> and <strong>focal Tversky</strong> losses.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(refC, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_long</span>(), <span class="at">device=</span>device)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_tensor</span>(predL, <span class="at">dtype=</span>torch<span class="sc">::</span><span class="fu">torch_float32</span>(), <span class="at">device=</span>device)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">permute</span>(<span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>))</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> target<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> pred<span class="sc">$</span><span class="fu">unsqueeze</span>(<span class="dv">1</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>target <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(target, target), <span class="at">dim=</span><span class="dv">1</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> torch<span class="sc">::</span><span class="fu">torch_cat</span>(<span class="fu">list</span>(pred, pred), <span class="at">dim=</span><span class="dv">1</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>myComboLoss <span class="ot">&lt;-</span> <span class="fu">defineUnifiedFocalLoss</span>(<span class="at">nCls=</span><span class="dv">5</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">lambda=</span>.<span class="dv">5</span>, <span class="co">#Use both distribution and region-based losses</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">gamma=</span> <span class="fl">0.8</span>, <span class="co">#Apply a focal adjustment</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">delta=</span> <span class="fl">0.6</span>, <span class="co">#Weight FN higher than FP</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">smooth =</span> <span class="fl">1e-8</span>,</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">zeroStart=</span><span class="cn">TRUE</span>,</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">clsWghtsDist=</span><span class="dv">1</span>,</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">clsWghtsReg=</span><span class="dv">1</span>,</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">useLogCosH =</span><span class="cn">FALSE</span>,</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">device=</span>device)</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="fu">myComboLoss</span>(<span class="at">pred=</span>pred,</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>            <span class="at">target=</span>target)</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>torch_tensor</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a> <span class="fl">0.9143</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>[ CUDAFloatType{<span class="dv">1</span>} ]</span></code></pre></div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
